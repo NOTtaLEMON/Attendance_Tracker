@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="layout-auto">
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="app-title">Attendance</span>
+    </div>
+    <div class="topbar-right">
+      <button id="themeToggle" class="icon-btn" title="Toggle theme">🌓</button>
+      <select id="layoutToggle" class="layout-select" title="Force layout">
+        <option value="layout-auto">Auto</option>
+        <option value="layout-mobile">Phone</option>
+        <option value="layout-desktop">Laptop</option>
+      </select>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabNav">
+    <button class="tab-btn active" data-tab="today">Today</button>
+    <button class="tab-btn" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="calendar">Calendar</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
+  </nav>
+
+  <main id="app">
+
+    <section id="tab-today" class="tab-panel active">
+      <div class="day-nav">
+        <button id="prevDay" class="icon-btn">◀</button>
+        <div class="day-nav-label">
+          <div id="dayLabelDate" class="day-date"></div>
+          <div id="dayLabelStatus" class="day-status"></div>
+        </div>
+        <button id="nextDay" class="icon-btn">▶</button>
+      </div>
+      <button id="jumpToday" class="link-btn">Jump to today</button>
+      <div id="unloggedBanner" class="banner hidden"></div>
+      <div id="todayList" class="slot-list"></div>
+    </section>
+
+    <section id="tab-dashboard" class="tab-panel">
+      <div id="overallCard" class="overall-card"></div>
+      <div id="subjectCards" class="subject-cards"></div>
+    </section>
+
+    <section id="tab-calendar" class="tab-panel">
+      <div class="cal-nav">
+        <button id="prevMonth" class="icon-btn">◀</button>
+        <div id="calMonthLabel" class="cal-month-label"></div>
+        <button id="nextMonth" class="icon-btn">▶</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span><i class="dot ok"></i>All attended</span>
+        <span><i class="dot bad"></i>Missed one+</span>
+        <span><i class="dot partial"></i>Unlogged</span>
+        <span><i class="dot off"></i>Holiday</span>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab-panel">
+      <div class="settings-block">
+        <h3>Semester</h3>
+        <label>Start date <input type="date" id="cfgStart"></label>
+        <label>End date <input type="date" id="cfgEnd"></label>
+        <label>Attendance target % <input type="number" id="cfgThreshold" min="0" max="100"></label>
+      </div>
+
+      <div class="settings-block">
+        <h3>Weekly timetable</h3>
+        <p class="settings-hint">Subject · Start · End · Weight (classes this slot counts as — 2 for a 2-hour lab)</p>
+        <div id="timetableEditor"></div>
+        <button id="addSlotBtn" class="btn-secondary">+ Add class</button>
+      </div>
+
+      <div class="settings-block">
+        <h3>Holidays / no-class days</h3>
+        <div id="holidayEditor"></div>
+        <div class="add-holiday-row">
+          <input type="date" id="newHolidayDate">
+          <input type="text" id="newHolidayName" placeholder="Reason (e.g. Gandhi Jayanthi)">
+          <button id="addHolidayBtn" class="btn-secondary">+ Add</button>
+        </div>
+      </div>
+
+      <div class="settings-block">
+        <h3>Data</h3>
+        <div class="data-row">
+          <button id="exportBtn" class="btn-secondary">Export backup (.json)</button>
+          <button id="importBtn" class="btn-secondary">Import backup</button>
+          <input type="file" id="importFile" accept="application/json" class="hidden">
+        </div>
+        <div class="data-row">
+          <button id="resetBtn" class="btn-danger">Reset all data</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="modalRoot"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
