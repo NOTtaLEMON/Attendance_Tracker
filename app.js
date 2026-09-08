@@ -327,8 +327,12 @@
     var cutoff = uptoDateExclusiveISO ? parseISO(uptoDateExclusiveISO) : addDays(todayDate(), 1);
     var subjects = subjectList();
     var stats = {};
+    function blankBucket() { return { held: 0, attended: 0, missed: 0, cancelled: 0, unlogged: 0, remaining: 0 }; }
     subjects.forEach(function (s) {
-      stats[s] = { held: 0, attended: 0, missed: 0, cancelled: 0, unlogged: 0, remaining: 0 };
+      var st = blankBucket();
+      st.theory = blankBucket();
+      st.lab = blankBucket();
+      stats[s] = st;
     });
 
     var d = new Date(start);
@@ -339,16 +343,19 @@
           var st = stats[slot.subject];
           if (!st) return;
           var w = slot.weight;
+          var bucket = w > 1 ? st.lab : st.theory;
           var rec = getRecord(info.iso, slot.subject, slot.start);
-          if (rec) {
-            if (rec.status === "present") { st.attended += w; st.held += w; }
-            else if (rec.status === "absent") { st.missed += w; st.held += w; }
-            else if (rec.status === "cancelled") { st.cancelled += w; }
-          } else if (d < cutoff) {
-            st.unlogged += w;
-          } else {
-            st.remaining += w;
-          }
+          [st, bucket].forEach(function (target) {
+            if (rec) {
+              if (rec.status === "present") { target.attended += w; target.held += w; }
+              else if (rec.status === "absent") { target.missed += w; target.held += w; }
+              else if (rec.status === "cancelled") { target.cancelled += w; }
+            } else if (d < cutoff) {
+              target.unlogged += w;
+            } else {
+              target.remaining += w;
+            }
+          });
         });
       }
       d = addDays(d, 1);
@@ -358,6 +365,8 @@
     subjects.forEach(function (s) {
       var st = stats[s];
       st.pct = st.held ? Math.round((st.attended / st.held) * 1000) / 10 : null;
+      st.theory.pct = st.theory.held ? Math.round((st.theory.attended / st.theory.held) * 1000) / 10 : null;
+      st.lab.pct = st.lab.held ? Math.round((st.lab.attended / st.lab.held) * 1000) / 10 : null;
       overall.held += st.held;
       overall.attended += st.attended;
       overall.missed += st.missed;
@@ -662,7 +671,23 @@
       var card = document.createElement("div");
       card.className = "subject-card";
       var pctClass = st.pct === null ? "warn" : st.pct >= config.attendanceThreshold ? "ok" : (st.pct >= config.attendanceThreshold - 10 ? "warn" : "bad");
-      var advice = bunkAdvice(st);
+
+      var hasTheory = st.theory.held + st.theory.remaining + st.theory.unlogged > 0;
+      var hasLab = st.lab.held + st.lab.remaining + st.lab.unlogged > 0;
+      var adviceLines = [];
+      if (hasTheory && hasLab) {
+        var theoryAdvice = bunkAdvice(st.theory);
+        var labAdvice = bunkAdvice(st.lab);
+        adviceLines.push({ label: "Theory: ", advice: theoryAdvice });
+        adviceLines.push({ label: "Lab: ", advice: labAdvice });
+      } else {
+        adviceLines.push({ label: "", advice: bunkAdvice(st) });
+      }
+      var adviceHtml = adviceLines.map(function (line) {
+        return '<div class="subject-card-advice ' + (line.advice.type === "bad" ? "bad" : "ok") + '">' +
+          escapeHtml(line.label + line.advice.text) + "</div>";
+      }).join("");
+
       card.innerHTML =
         '<div class="subject-card-top">' +
           '<div class="subject-card-name"><span class="subject-dot" style="background:' + subjectColor(subject) + '"></span>' + escapeHtml(subject) + "</div>" +
@@ -671,9 +696,56 @@
         '<div class="progress-bar"><div class="progress-bar-fill ' + pctClass + '" style="width:' + (st.pct || 0) + '%"></div></div>' +
         '<div class="subject-card-stats"><span>' + st.attended + " attended</span><span>" + st.held + " held</span><span>" + st.remaining + " left</span></div>" +
         (st.unlogged ? '<div class="subject-card-stats"><span>' + st.unlogged + " unlogged</span></div>" : "") +
-        '<div class="subject-card-advice ' + (advice.type === "bad" ? "bad" : "ok") + '">' + escapeHtml(advice.text) + "</div>";
+        adviceHtml;
       wrap.appendChild(card);
     });
+
+    renderMissedLog();
+  }
+
+  function getMissedLog() {
+    var list = [];
+    Object.keys(records).forEach(function (key) {
+      var rec = records[key];
+      if (rec.status !== "absent") return;
+      var parts = key.split("::");
+      list.push({ iso: parts[0], subject: parts[1], start: parts[2], reason: rec.reason });
+    });
+    list.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? 1 : -1;
+      return a.start < b.start ? 1 : -1;
+    });
+    return list;
+  }
+
+  function renderMissedLog() {
+    var container = document.getElementById("missedLog");
+    var log = getMissedLog();
+    container.innerHTML = '<h3>Missed classes (' + log.length + ")</h3>";
+    if (!log.length) {
+      var empty = document.createElement("div");
+      empty.className = "empty-notice";
+      empty.textContent = "No missed classes logged.";
+      container.appendChild(empty);
+      return;
+    }
+    var list = document.createElement("div");
+    list.className = "missed-log-list";
+    log.forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "missed-log-item";
+      var d = parseISO(item.iso);
+      row.innerHTML =
+        '<span class="subject-dot" style="background:' + subjectColor(item.subject) + '"></span>' +
+        '<div class="missed-log-info">' +
+          '<div class="missed-log-subject">' + escapeHtml(item.subject) + "</div>" +
+          '<div class="missed-log-meta">' + WEEKDAY_NAMES[d.getDay()].slice(0, 3) + ", " + item.iso + " · " + item.start +
+          (item.reason ? " · " + escapeHtml(item.reason) : "") + "</div>" +
+        "</div>";
+      row.onclick = function () { openDayModal(item.iso); };
+      list.appendChild(row);
+    });
+    container.appendChild(list);
   }
 
   // ---------- rendering: Calendar ----------

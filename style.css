@@ -451,9 +451,40 @@ button, input, select {
   font-weight: 600;
   padding: 6px 8px;
   border-radius: 8px;
+  margin-top: 4px;
 }
 .subject-card-advice.ok { background: var(--ok-bg); color: var(--ok); }
 .subject-card-advice.bad { background: var(--bad-bg); color: var(--bad); }
+
+/* --- Missed log --- */
+.missed-log {
+  margin-top: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.missed-log h3 { margin: 0 0 10px; font-size: 14px; }
+.missed-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.missed-log-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.missed-log-item:hover { background: var(--surface-2); }
+.missed-log-info { flex: 1; min-width: 0; }
+.missed-log-subject { font-weight: 700; font-size: 13.5px; }
+.missed-log-meta { font-size: 12px; color: var(--text-dim); }
 
 /* --- Calendar --- */
 .cal-nav {

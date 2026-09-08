@@ -34,6 +34,8 @@ All of the above are editable in the Settings tab — dates, timetable slots, an
   - "+ Add extra class for this day" adds a one-off class (any subject, including a brand-new one) for that date only — for substitutions, makeup classes, or an extra class added on a normally-free day. It even works on holidays/weekends if a makeup class is actually held.
 - **Settings**: edit semester dates, weekly timetable (including per-class weight), holidays, attendance target; export/import a JSON backup (important since this is localStorage-only — clearing browser data wipes it); reset everything.
 - **Bulk day actions**: "✓ Present today" / "✗ Absent today" on the Today tab (and the calendar day view) mark every class scheduled that day in one click, instead of tapping each one individually.
+- **Theory/lab split advice**: for a subject with both lecture and lab sessions (e.g. DSA), the Dashboard card shows two separate bunk-calculator lines — "Theory: ..." and "Lab: ..." — instead of one blended number, since missing a lab burns through your buffer twice as fast. Subjects with only one type (Math, DTL, etc.) still show a single line.
+- **Missed classes log**: at the bottom of the Dashboard, every absence you've logged (across the whole semester) is listed with subject, date, time, and reason, most recent first. Click any entry to jump to that day and edit it.
 - **Theme toggle**: auto/light/dark.
 - **Layout toggle**: force Phone or Laptop layout regardless of screen size, or leave it Auto (responsive).
 
