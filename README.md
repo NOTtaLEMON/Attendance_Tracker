@@ -33,12 +33,14 @@ All of the above are editable in the Settings tab — dates, timetable slots, an
   - "Not held today (temporary change)" on any scheduled class removes it for *that date only*; the recurring weekly timetable is untouched.
   - "+ Add extra class for this day" adds a one-off class (any subject, including a brand-new one) for that date only — for substitutions, makeup classes, or an extra class added on a normally-free day. It even works on holidays/weekends if a makeup class is actually held.
 - **Settings**: edit semester dates, weekly timetable (including per-class weight), holidays, attendance target; export/import a JSON backup (important since this is localStorage-only — clearing browser data wipes it); reset everything.
+- **Bulk day actions**: "✓ Present today" / "✗ Absent today" on the Today tab (and the calendar day view) mark every class scheduled that day in one click, instead of tapping each one individually.
 - **Theme toggle**: auto/light/dark.
 - **Layout toggle**: force Phone or Laptop layout regardless of screen size, or leave it Auto (responsive).
 
 ## Notes on the class-count logic
 
 - Each timetable slot has a **weight** (shown as a badge, e.g. "2x") — a 1-hour lecture is weight 1, a 2-hour lab is weight 2, so a lab attendance/absence counts double toward your held/attended totals. This matches how VTU-style attendance is actually computed (by hours, not by session count), not just distinct sessions. Weight is editable per slot in Settings, or per ad-hoc extra class.
+- **Labs are not separate subjects.** DSA Lab counts as DSA (weight 2), ADLD Lab counts as ADLD (weight 2). DTL only exists as a lab, so it's its own subject "DTL". There's one Dashboard card per real subject — no split lecture/lab cards.
 - A class only counts toward your % once you log it. Unlogged past classes show up in a banner and in the calendar as "Unlogged" so you know to back-fill.
 - "Cancelled" classes are excluded from both attended and held counts — they don't help or hurt your percentage.
 - The academic calendar's CIE test weeks (e.g. 9–13 Oct) are **not** automatically treated as no-class days, since tests are typically held in the normal timetable slot rather than cancelling it. If your college actually suspends classes during test week, mark those dates as holidays (from Today or Settings).

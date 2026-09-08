@@ -161,6 +161,19 @@ button, input, select {
   font-weight: 600;
 }
 
+.bulk-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.bulk-btn {
+  flex: 1;
+  padding: 10px 6px;
+  font-size: 13.5px;
+}
+.bulk-btn.present { border-color: var(--ok); color: var(--ok); }
+.bulk-btn.absent { border-color: var(--bad); color: var(--bad); }
+
 .slot-list {
   display: flex;
   flex-direction: column;

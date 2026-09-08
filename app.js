@@ -49,12 +49,12 @@
         { subject: "OS", start: "10:00", end: "11:00" },
         { subject: "Math", start: "11:30", end: "12:30" },
         { subject: "ADLD", start: "12:30", end: "13:30" },
-        { subject: "DTL Lab", start: "14:30", end: "16:30", weight: 2 }
+        { subject: "DTL", start: "14:30", end: "16:30", weight: 2 }
       ],
       3: [
         { subject: "OS", start: "09:00", end: "10:00" },
         { subject: "Math", start: "10:00", end: "11:00" },
-        { subject: "DSA Lab", start: "11:30", end: "13:30", weight: 2 },
+        { subject: "DSA", start: "11:30", end: "13:30", weight: 2 },
         { subject: "DSA", start: "14:30", end: "15:30" },
         { subject: "BC", start: "15:30", end: "16:30" }
       ],
@@ -66,7 +66,7 @@
       5: [
         { subject: "QCE", start: "09:00", end: "10:00" },
         { subject: "BC", start: "10:00", end: "11:00" },
-        { subject: "ADLD Lab", start: "11:30", end: "13:30", weight: 2 }
+        { subject: "ADLD", start: "11:30", end: "13:30", weight: 2 }
       ]
     }
   };
@@ -119,6 +119,54 @@
   var records = loadRecords();
   var ui = loadUI();
   var overrides = loadOverrides();
+
+  // one-time migration: lab sessions used to be tracked as separate subjects
+  // ("DSA Lab", "ADLD Lab", "DTL Lab"); they now merge into their parent
+  // subject ("DSA Lab" -> "DSA", "ADLD Lab" -> "ADLD") so attendance isn't split.
+  // "DTL Lab" has no separate lecture, so it becomes its own subject "DTL".
+  (function migrateLabSubjectNames() {
+    var RENAME = { "DSA Lab": "DSA", "ADLD Lab": "ADLD", "DTL Lab": "DTL" };
+    var changed = false;
+
+    Object.keys(config.timetable || {}).forEach(function (dow) {
+      config.timetable[dow].forEach(function (slot) {
+        if (RENAME[slot.subject]) { slot.subject = RENAME[slot.subject]; changed = true; }
+      });
+    });
+
+    var newRecords = {};
+    Object.keys(records).forEach(function (key) {
+      var parts = key.split("::");
+      if (parts.length === 3 && RENAME[parts[1]]) {
+        parts[1] = RENAME[parts[1]];
+        changed = true;
+      }
+      newRecords[parts.join("::")] = records[key];
+    });
+    records = newRecords;
+
+    Object.keys(overrides).forEach(function (iso) {
+      var ov = overrides[iso];
+      if (ov.removed) {
+        ov.removed = ov.removed.map(function (k) {
+          var parts = k.split("::");
+          if (parts.length === 2 && RENAME[parts[0]]) { parts[0] = RENAME[parts[0]]; changed = true; }
+          return parts.join("::");
+        });
+      }
+      if (ov.added) {
+        ov.added.forEach(function (s) {
+          if (RENAME[s.subject]) { s.subject = RENAME[s.subject]; changed = true; }
+        });
+      }
+    });
+
+    if (changed) {
+      saveConfig(config);
+      saveRecords(records);
+      saveOverrides(overrides);
+    }
+  })();
 
   // ---------- date utils ----------
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
@@ -265,6 +313,13 @@
     saveRecords(records);
   }
 
+  function markAllForDay(iso, slots, status) {
+    slots.forEach(function (slot) {
+      var rec = getRecord(iso, slot.subject, slot.start);
+      setRecord(iso, slot.subject, slot.start, status, rec ? rec.reason : "");
+    });
+  }
+
   // ---------- stats ----------
   function computeStats(uptoDateExclusiveISO) {
     var start = parseISO(config.semesterStart);
@@ -365,6 +420,7 @@
         note.textContent = "Holiday (" + info.holidayName + ") but a class is scheduled below";
         listEl.appendChild(note);
       }
+      renderBulkButtons(listEl, info.iso, info.slots, renderToday);
       info.slots.forEach(function (slot) {
         listEl.appendChild(renderSlotCard(info.iso, slot, renderToday));
       });
@@ -464,6 +520,34 @@
     }
 
     return card;
+  }
+
+  function renderBulkButtons(container, iso, slots, onChange) {
+    if (!slots.length) return;
+    var wrap = document.createElement("div");
+    wrap.className = "bulk-actions";
+
+    var presentBtn = document.createElement("button");
+    presentBtn.className = "status-btn present bulk-btn";
+    presentBtn.textContent = "✓ Present today";
+    presentBtn.onclick = function () {
+      if (!confirm("Mark all " + slots.length + " classes on " + iso + " as Present?")) return;
+      markAllForDay(iso, slots, "present");
+      onChange();
+    };
+
+    var absentBtn = document.createElement("button");
+    absentBtn.className = "status-btn absent bulk-btn";
+    absentBtn.textContent = "✗ Absent today";
+    absentBtn.onclick = function () {
+      if (!confirm("Mark all " + slots.length + " classes on " + iso + " as Absent?")) return;
+      markAllForDay(iso, slots, "absent");
+      onChange();
+    };
+
+    wrap.appendChild(presentBtn);
+    wrap.appendChild(absentBtn);
+    container.appendChild(wrap);
   }
 
   function renderHolidayToggle(container, iso, info, onChange) {
@@ -676,6 +760,7 @@
         note.textContent = "Holiday (" + info.holidayName + ") but a class is scheduled below";
         box.appendChild(note);
       }
+      renderBulkButtons(box, iso, info.slots, refreshModal);
       var list = document.createElement("div");
       list.className = "slot-list";
       info.slots.forEach(function (slot) {
